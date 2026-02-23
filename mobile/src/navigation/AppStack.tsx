@@ -1,6 +1,12 @@
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import HomeScreen from '@/screens/HomeScreen';
+import {
+  ProjectsListScreen,
+  CreateProjectScreen,
+  ProjectDetailScreen,
+  BuildLogsScreen,
+} from '@/features/projects';
 import { useTheme } from '@/hooks';
 import type { AppStackParamList } from '@/types';
 
@@ -27,6 +33,35 @@ export function AppStack(): React.JSX.Element {
         name="Home"
         component={HomeScreen}
         options={{ title: 'ForgeAI Builder' }}
+      />
+      <Stack.Screen
+        name="ProjectsList"
+        component={ProjectsListScreen}
+        options={{ title: 'Projects' }}
+      />
+      <Stack.Screen
+        name="CreateProject"
+        component={CreateProjectScreen}
+        options={{ title: 'New Project' }}
+      />
+      <Stack.Screen
+        name="ProjectDetail"
+        component={ProjectDetailScreen}
+        options={{ title: 'Project' }}
+      />
+      <Stack.Screen
+        name="BuildLogs"
+        component={BuildLogsScreen}
+        options={{
+          title: 'Build Logs',
+          headerStyle: { backgroundColor: '#020617' },
+          headerTintColor: '#F8FAFC',
+          headerTitleStyle: {
+            fontWeight: theme.typography.fontWeight.semiBold,
+            fontSize: theme.typography.fontSize.lg,
+          },
+          contentStyle: { backgroundColor: '#020617' },
+        }}
       />
     </Stack.Navigator>
   );

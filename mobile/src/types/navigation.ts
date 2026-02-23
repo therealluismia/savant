@@ -8,6 +8,10 @@ export type AuthStackParamList = {
 
 export type AppStackParamList = {
   Home: undefined;
+  ProjectsList: undefined;
+  CreateProject: undefined;
+  ProjectDetail: { projectId: string };
+  BuildLogs: { projectId: string; buildId: string | null };
   Profile: { userId?: string };
   Settings: undefined;
 };

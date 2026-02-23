@@ -1,17 +1,15 @@
 import type { AuthProvider } from './AuthProvider';
-import { SupabaseAuthProvider } from './SupabaseAuthProvider';
+import { MockAuthProvider } from '@/mock/mockAuthProvider';
 
 /**
  * AuthProviderFactory — returns the singleton AuthProvider instance.
  *
- * Only this module knows which concrete provider is active.
- * Swap the implementation here without touching any store, hook, or screen.
- *
- * Future providers (Firebase, custom JWT, etc.) can be chosen here based
- * on env.APP_ENV or a feature flag without leaking provider types elsewhere.
+ * Currently wired to MockAuthProvider for frontend development.
+ * To switch to Supabase: replace MockAuthProvider with SupabaseAuthProvider.
+ * No other file needs to change.
  */
 function createAuthProvider(): AuthProvider {
-  return new SupabaseAuthProvider();
+  return new MockAuthProvider();
 }
 
 export const authProvider: AuthProvider = createAuthProvider();
