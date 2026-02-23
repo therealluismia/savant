@@ -38,7 +38,7 @@ export default function LoginScreen(): React.JSX.Element {
 
   const onSubmit = async (values: LoginFormValues): Promise<void> => {
     try {
-      await login(values);
+      await login(values.email, values.password);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Login failed. Please try again.';
       showError('Login Failed', message);

@@ -90,7 +90,7 @@ export default function HomeScreen(): React.JSX.Element {
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.header}>
           <Text style={styles.greeting}>Welcome back,</Text>
-          <Text style={styles.userName}>{user?.displayName ?? 'Builder'}</Text>
+          <Text style={styles.userName}>{user?.email ?? 'Builder'}</Text>
         </View>
 
         <View style={styles.card}>

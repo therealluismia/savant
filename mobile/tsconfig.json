@@ -36,7 +36,12 @@
       "@/constants/*": ["src/constants/*"],
       "@/utils/*": ["src/utils/*"],
       "@/providers/*": ["src/providers/*"],
-      "@/config/*": ["src/config/*"]
+      "@/config/*": ["src/config/*"],
+      "@/core/*": ["src/core/*"],
+      "@/core/auth": ["src/core/auth/index.ts"],
+      "@/core/auth/*": ["src/core/auth/*"],
+      "@/core/events": ["src/core/events/index.ts"],
+      "@/core/events/*": ["src/core/events/*"]
     }
   },
   "include": ["**/*.ts", "**/*.tsx"],

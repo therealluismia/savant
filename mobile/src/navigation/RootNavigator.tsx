@@ -9,7 +9,8 @@ import type { RootStackParamList } from '@/types';
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export function RootNavigator(): React.JSX.Element {
-  const { isAuthenticated, isInitialized } = useAuthStore();
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const isInitialized = useAuthStore((state) => state.isInitialized);
 
   if (!isInitialized) {
     return <LoadingScreen />;

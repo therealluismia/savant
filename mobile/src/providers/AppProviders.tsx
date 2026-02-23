@@ -2,6 +2,7 @@ import React, { useEffect, type ReactNode } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { useTheme } from '@/hooks';
 import { useAuthStore, useThemeStore } from '@/store';
+import { linkingConfig } from '@/navigation/linking';
 import type { Theme as NavTheme } from '@react-navigation/native';
 
 interface AppProvidersProps {
@@ -10,13 +11,13 @@ interface AppProvidersProps {
 
 export function AppProviders({ children }: AppProvidersProps): React.JSX.Element {
   const theme = useTheme();
-  const initializeAuth = useAuthStore((state) => state.initialize);
+  const restoreSession = useAuthStore((state) => state.restoreSession);
   const initializeTheme = useThemeStore((state) => state.initialize);
 
   useEffect(() => {
-    void initializeAuth();
+    void restoreSession();
     void initializeTheme();
-  }, [initializeAuth, initializeTheme]);
+  }, [restoreSession, initializeTheme]);
 
   const navTheme: NavTheme = {
     dark: theme.isDark,
@@ -30,5 +31,9 @@ export function AppProviders({ children }: AppProvidersProps): React.JSX.Element
     },
   };
 
-  return <NavigationContainer theme={navTheme}>{children}</NavigationContainer>;
+  return (
+    <NavigationContainer theme={navTheme} linking={linkingConfig}>
+      {children}
+    </NavigationContainer>
+  );
 }

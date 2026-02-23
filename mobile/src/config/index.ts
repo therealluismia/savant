@@ -1,4 +1,4 @@
-import Constants from 'expo-constants';
+import { env } from './env';
 
 interface AppConfig {
   apiBaseUrl: string;
@@ -7,24 +7,11 @@ interface AppConfig {
   enableLogging: boolean;
 }
 
-function resolveConfig(): AppConfig {
-  const extra = Constants.expoConfig?.extra ?? {};
+export const appConfig: AppConfig = {
+  apiBaseUrl: env.API_BASE_URL,
+  appEnv: env.APP_ENV,
+  apiTimeout: 30000,
+  enableLogging: env.APP_ENV !== 'production',
+};
 
-  const rawEnv = (extra['appEnv'] as string | undefined) ?? 'development';
-  const appEnv: AppConfig['appEnv'] =
-    rawEnv === 'production' ? 'production' : rawEnv === 'staging' ? 'staging' : 'development';
-
-  const apiBaseUrl =
-    typeof extra['apiBaseUrl'] === 'string'
-      ? extra['apiBaseUrl']
-      : 'https://api.forgeai.dev';
-
-  return {
-    apiBaseUrl,
-    appEnv,
-    apiTimeout: 30000,
-    enableLogging: appEnv !== 'production',
-  };
-}
-
-export const appConfig: AppConfig = resolveConfig();
+export { env } from './env';

@@ -1,51 +1,21 @@
 import apiClient from './client';
 import type { ApiResponse } from '@/types';
-import type { User, AuthTokens } from '@/types/auth';
+import type { AuthUser } from '@/core/auth';
 
-export interface LoginPayload {
-  email: string;
-  password: string;
-}
-
-export interface RegisterPayload {
-  email: string;
-  password: string;
-  displayName: string;
-}
-
-export interface AuthResponseData {
-  user: User;
-  tokens: AuthTokens;
-}
-
-export interface ForgotPasswordPayload {
-  email: string;
-}
-
+/**
+ * authApi — REST helpers for auth-adjacent endpoints that sit outside the
+ * provider boundary (e.g. fetching an enriched user profile after sign-in).
+ *
+ * Authentication itself (signIn / signOut / refresh) is handled exclusively
+ * by the AuthProvider in src/core/auth — never call those here.
+ */
 export const authApi = {
-  login: async (payload: LoginPayload): Promise<AuthResponseData> => {
-    const response = await apiClient.post<ApiResponse<AuthResponseData>>('/auth/login', payload);
-    return response.data.data;
-  },
-
-  register: async (payload: RegisterPayload): Promise<AuthResponseData> => {
-    const response = await apiClient.post<ApiResponse<AuthResponseData>>(
-      '/auth/register',
-      payload,
-    );
-    return response.data.data;
-  },
-
-  forgotPassword: async (payload: ForgotPasswordPayload): Promise<void> => {
-    await apiClient.post('/auth/forgot-password', payload);
-  },
-
-  logout: async (): Promise<void> => {
-    await apiClient.post('/auth/logout');
-  },
-
-  getProfile: async (): Promise<User> => {
-    const response = await apiClient.get<ApiResponse<User>>('/auth/me');
+  /**
+   * Fetch the extended user profile from the backend.
+   * Call this after sign-in when you need fields beyond id/email.
+   */
+  getProfile: async (): Promise<AuthUser> => {
+    const response = await apiClient.get<ApiResponse<AuthUser>>('/auth/me');
     return response.data.data;
   },
 };
