@@ -8,8 +8,8 @@ import {
   ListRenderItem,
 } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
-import { useRoute, useNavigation } from '@react-navigation/native';
-import type { NativeStackScreenProps, NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useRoute } from '@react-navigation/native';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useTheme } from '@/hooks';
 import { useBuild } from '../hooks/useBuild';
 import { useProjectsStore } from '@/store';
@@ -17,8 +17,12 @@ import { EmptyState } from '@/components';
 import type { AppStackParamList } from '@/types';
 import type { BuildLogEntry, BuildLogLevel } from '../types';
 
+// Terminal palette — fixed colours independent of light/dark theme
+const TERMINAL_BG = '#020617';
+const TERMINAL_BORDER = '#1E293B';
+const TERMINAL_TIMESTAMP = '#475569';
+
 type Props = NativeStackScreenProps<AppStackParamList, 'BuildLogs'>;
-type Nav = NativeStackNavigationProp<AppStackParamList>;
 
 const LOG_COLOR: Record<BuildLogLevel, string> = {
   info: '#94A3B8',
@@ -36,7 +40,6 @@ const LOG_PREFIX: Record<BuildLogLevel, string> = {
 
 export default function BuildLogsScreen(): React.JSX.Element {
   const theme = useTheme();
-  const navigation = useNavigation<Nav>();
   const route = useRoute<Props['route']>();
   const { projectId } = route.params;
   const flatListRef = useRef<FlatList<BuildLogEntry>>(null);
@@ -44,7 +47,6 @@ export default function BuildLogsScreen(): React.JSX.Element {
   const { isBuilding, logs, start, stop } = useBuild(projectId);
   const project = useProjectsStore((s) => s.getProjectById(projectId));
 
-  // Auto-scroll to bottom on new log
   useEffect(() => {
     if (logs.length > 0) {
       flatListRef.current?.scrollToEnd({ animated: true });
@@ -59,14 +61,15 @@ export default function BuildLogsScreen(): React.JSX.Element {
     }
   }, [isBuilding, start, stop]);
 
-  const renderItem: ListRenderItem<BuildLogEntry> = useCallback(({ item, index }) => (
-    <LogLine entry={item} index={index} theme={theme} />
-  ), [theme]);
+  const renderItem: ListRenderItem<BuildLogEntry> = useCallback(
+    ({ item, index }) => <LogLine entry={item} index={index} theme={theme} />,
+    [theme],
+  );
 
   const styles = StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: theme.colors.neutral[1000] ?? '#020617',
+      backgroundColor: TERMINAL_BG,
     },
     toolbar: {
       flexDirection: 'row',
@@ -75,18 +78,18 @@ export default function BuildLogsScreen(): React.JSX.Element {
       paddingHorizontal: theme.spacing[4],
       paddingVertical: theme.spacing[3],
       borderBottomWidth: 1,
-      borderBottomColor: theme.colors.neutral[800] ?? '#1E293B',
+      borderBottomColor: TERMINAL_BORDER,
     },
     projectLabel: {
       fontSize: theme.typography.fontSize.sm,
       fontWeight: theme.typography.fontWeight.medium,
-      color: theme.colors.neutral[400] ?? '#94A3B8',
+      color: '#94A3B8',
     },
     statusDot: {
       width: 8,
       height: 8,
       borderRadius: theme.radii.full,
-      backgroundColor: isBuilding ? theme.colors.warning : theme.colors.neutral[600] ?? '#475569',
+      backgroundColor: isBuilding ? theme.colors.warning : '#475569',
     },
     toolbarRight: {
       flexDirection: 'row',
@@ -111,27 +114,38 @@ export default function BuildLogsScreen(): React.JSX.Element {
       paddingVertical: theme.spacing[3],
       paddingBottom: theme.spacing[12],
     },
-    emptyWrapper: {
+    emptyContainer: {
       flex: 1,
+      backgroundColor: TERMINAL_BG,
+      justifyContent: 'center',
+    },
+    startBuildBtn: {
+      backgroundColor: theme.colors.primary,
+      paddingHorizontal: theme.spacing[6],
+      paddingVertical: theme.spacing[3],
+      borderRadius: theme.radii.md,
+    },
+    startBuildText: {
+      color: '#FFFFFF',
+      fontWeight: theme.typography.fontWeight.semiBold,
+      fontSize: theme.typography.fontSize.base,
     },
   });
 
   if (logs.length === 0 && !isBuilding) {
     return (
-      <View style={[styles.container, { justifyContent: 'center' }]}>
+      <View style={styles.emptyContainer}>
         <EmptyState
           icon="📋"
           title="No Logs Yet"
           description="Start a build to see real-time output here."
           action={
             <TouchableOpacity
-              style={{ backgroundColor: theme.colors.primary, paddingHorizontal: theme.spacing[6], paddingVertical: theme.spacing[3], borderRadius: theme.radii.md }}
-              onPress={() => { start(); }}
+              style={styles.startBuildBtn}
+              onPress={start}
               activeOpacity={0.85}
             >
-              <Text style={{ color: '#FFFFFF', fontWeight: theme.typography.fontWeight.semiBold, fontSize: theme.typography.fontSize.base }}>
-                Start Build
-              </Text>
+              <Text style={styles.startBuildText}>Start Build</Text>
             </TouchableOpacity>
           }
         />
@@ -142,9 +156,7 @@ export default function BuildLogsScreen(): React.JSX.Element {
   return (
     <View style={styles.container}>
       <View style={styles.toolbar}>
-        <View>
-          <Text style={styles.projectLabel}>{project?.name ?? projectId}</Text>
-        </View>
+        <Text style={styles.projectLabel}>{project?.name ?? projectId}</Text>
         <View style={styles.toolbarRight}>
           <View style={styles.statusDot} />
           <TouchableOpacity
@@ -172,7 +184,7 @@ export default function BuildLogsScreen(): React.JSX.Element {
   );
 }
 
-// ─── LogLine sub-component ────────────────────────────────────────────────────
+// ─── LogLine ──────────────────────────────────────────────────────────────────
 
 interface LogLineProps {
   entry: BuildLogEntry;
@@ -192,7 +204,7 @@ function LogLine({ entry, index, theme }: LogLineProps): React.JSX.Element {
     timestamp: {
       fontSize: 11,
       fontFamily: theme.typography.fontFamily.mono,
-      color: theme.colors.neutral[600] ?? '#475569',
+      color: TERMINAL_TIMESTAMP,
       marginRight: theme.spacing[2],
       minWidth: 60,
     },
@@ -207,11 +219,17 @@ function LogLine({ entry, index, theme }: LogLineProps): React.JSX.Element {
 
   function formatTime(iso: string): string {
     const d = new Date(iso);
-    return `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}:${d.getSeconds().toString().padStart(2, '0')}`;
+    const hh = d.getHours().toString().padStart(2, '0');
+    const mm = d.getMinutes().toString().padStart(2, '0');
+    const ss = d.getSeconds().toString().padStart(2, '0');
+    return `${hh}:${mm}:${ss}`;
   }
 
   return (
-    <Animated.View entering={FadeInDown.duration(200).delay(index < 5 ? 0 : 50)} style={styles.row}>
+    <Animated.View
+      entering={FadeInDown.duration(200).delay(index < 5 ? 0 : 50)}
+      style={styles.row}
+    >
       <Text style={styles.timestamp}>{formatTime(entry.timestamp)}</Text>
       <Text style={styles.message}>{prefix}{entry.message}</Text>
     </Animated.View>

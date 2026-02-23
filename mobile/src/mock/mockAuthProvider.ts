@@ -1,6 +1,6 @@
 import type { AuthProvider } from '@/core/auth/AuthProvider';
 import { AuthProviderError, type AuthSession } from '@/core/auth/AuthSession';
-import { findMockUser, toAuthUser } from './mockData';
+import { findMockUser } from './mockData';
 import { simulateLatency } from './latencySimulator';
 
 /**

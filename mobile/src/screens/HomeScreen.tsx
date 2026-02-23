@@ -286,7 +286,7 @@ export default function HomeScreen(): React.JSX.Element {
               <Text style={styles.emptyActivityText}>No recent activity</Text>
             </View>
           ) : (
-            recentProjects.map((project, idx) => (
+            recentProjects.map((project) => (
               <ActivityRow
                 key={project.id}
                 project={project}
