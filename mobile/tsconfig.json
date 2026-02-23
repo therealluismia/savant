@@ -1,7 +1,9 @@
 {
   "compilerOptions": {
     "target": "ESNext",
-    "lib": ["ESNext"],
+    "lib": [
+      "ESNext"
+    ],
     "allowJs": true,
     "skipLibCheck": true,
     "strict": true,
@@ -21,29 +23,78 @@
     "jsx": "react-native",
     "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"],
-      "@/components/*": ["src/components/*"],
-      "@/navigation/*": ["src/navigation/*"],
-      "@/screens/*": ["src/screens/*"],
-      "@/features/*": ["src/features/*"],
-      "@/store/*": ["src/store/*"],
-      "@/services/*": ["src/services/*"],
-      "@/api/*": ["src/api/*"],
-      "@/hooks/*": ["src/hooks/*"],
-      "@/types/*": ["src/types/*"],
-      "@/theme/*": ["src/theme/*"],
-      "@/constants/*": ["src/constants/*"],
-      "@/utils/*": ["src/utils/*"],
-      "@/providers/*": ["src/providers/*"],
-      "@/config/*": ["src/config/*"],
-      "@/core/*": ["src/core/*"],
-      "@/core/auth": ["src/core/auth/index.ts"],
-      "@/core/auth/*": ["src/core/auth/*"],
-      "@/core/events": ["src/core/events/index.ts"],
-      "@/core/events/*": ["src/core/events/*"],
-      "@/mock/*": ["src/mock/*"]
+      "@/*": [
+        "src/*"
+      ],
+      "@/components/*": [
+        "src/components/*"
+      ],
+      "@/navigation/*": [
+        "src/navigation/*"
+      ],
+      "@/screens/*": [
+        "src/screens/*"
+      ],
+      "@/features/*": [
+        "src/features/*"
+      ],
+      "@/store/*": [
+        "src/store/*"
+      ],
+      "@/services/*": [
+        "src/services/*"
+      ],
+      "@/api/*": [
+        "src/api/*"
+      ],
+      "@/hooks/*": [
+        "src/hooks/*"
+      ],
+      "@/types/*": [
+        "src/types/*"
+      ],
+      "@/theme/*": [
+        "src/theme/*"
+      ],
+      "@/constants/*": [
+        "src/constants/*"
+      ],
+      "@/utils/*": [
+        "src/utils/*"
+      ],
+      "@/providers/*": [
+        "src/providers/*"
+      ],
+      "@/config/*": [
+        "src/config/*"
+      ],
+      "@/core/*": [
+        "src/core/*"
+      ],
+      "@/core/auth": [
+        "src/core/auth/index.ts"
+      ],
+      "@/core/auth/*": [
+        "src/core/auth/*"
+      ],
+      "@/core/events": [
+        "src/core/events/index.ts"
+      ],
+      "@/core/events/*": [
+        "src/core/events/*"
+      ],
+      "@/mock/*": [
+        "src/mock/*"
+      ]
     }
   },
-  "include": ["**/*.ts", "**/*.tsx"],
-  "exclude": ["node_modules", "babel.config.js"]
+  "include": [
+    "**/*.ts",
+    "**/*.tsx"
+  ],
+  "exclude": [
+    "node_modules",
+    "babel.config.js"
+  ],
+  "extends": "expo/tsconfig.base"
 }
