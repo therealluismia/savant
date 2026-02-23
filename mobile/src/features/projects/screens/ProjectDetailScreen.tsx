@@ -1,4 +1,4 @@
-import React, { useLayoutEffect } from 'react';
+import React, { useLayoutEffect, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -6,12 +6,20 @@ import {
   TouchableOpacity,
   StyleSheet,
 } from 'react-native';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSequence,
+  withTiming,
+  withSpring,
+} from 'react-native-reanimated';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { NativeStackNavigationProp, NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useTheme, useToast } from '@/hooks';
 import { useProjectsStore } from '@/store';
 import { StatusBadge } from '../components/StatusBadge';
 import { ErrorFallback } from '@/components';
+import { hapticMedium, hapticSuccess, hapticError, hapticWarning } from '@/utils/haptics';
 import type { AppStackParamList } from '@/types';
 
 type Props = NativeStackScreenProps<AppStackParamList, 'ProjectDetail'>;
@@ -28,15 +36,62 @@ export default function ProjectDetailScreen(): React.JSX.Element {
   const isBuilding = useProjectsStore((s) => Boolean(s.activeBuilds[projectId]));
   const startBuild = useProjectsStore((s) => s.startBuild);
 
+  // ── Rapid-tap guard ────────────────────────────────────────────────────────
+  // useRef persists across renders without causing re-renders itself.
+  const startPressedAt = useRef<number>(0);
+  const BUILD_DEBOUNCE_MS = 800;
+
+  // ── Build complete micro-animation ─────────────────────────────────────────
+  // Track previous isBuilding so we can detect the transition false→true→false
+  const prevIsBuilding = useRef(false);
+  const statusScale = useSharedValue(1);
+  const statusOpacity = useSharedValue(1);
+
+  useEffect(() => {
+    const justFinished = prevIsBuilding.current && !isBuilding;
+    if (justFinished && project) {
+      if (project.status === 'success') {
+        hapticSuccess();
+        // Scale-up then bounce back
+        statusScale.value = withSequence(
+          withTiming(1.15, { duration: 150 }),
+          withSpring(1, { damping: 8, stiffness: 200 }),
+        );
+      } else if (project.status === 'failed') {
+        hapticError();
+        // Shake: oscillate scale slightly
+        statusScale.value = withSequence(
+          withTiming(0.88, { duration: 80 }),
+          withTiming(1.08, { duration: 80 }),
+          withTiming(0.94, { duration: 80 }),
+          withSpring(1, { damping: 10 }),
+        );
+      }
+    }
+    prevIsBuilding.current = isBuilding;
+  }, [isBuilding, project, statusScale, statusOpacity]);
+
+  const statusAnimStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: statusScale.value }],
+    opacity: statusOpacity.value,
+  }));
+
   useLayoutEffect(() => {
     navigation.setOptions({ title: project?.name ?? 'Project' });
   }, [navigation, project?.name]);
 
   const handleStartBuild = (): void => {
+    // Rapid-tap guard: ignore presses within BUILD_DEBOUNCE_MS of the last one
+    const now = Date.now();
+    if (now - startPressedAt.current < BUILD_DEBOUNCE_MS) return;
+    startPressedAt.current = now;
+
     if (isBuilding) {
+      hapticWarning();
       showError('Build Running', 'A build is already in progress for this project.');
       return;
     }
+    hapticMedium();
     startBuild(projectId);
     navigation.navigate('BuildLogs', {
       projectId,
@@ -153,7 +208,10 @@ export default function ProjectDetailScreen(): React.JSX.Element {
         <View style={styles.headerCard}>
           <Text style={styles.projectName}>{project.name}</Text>
           <Text style={styles.description}>{project.description}</Text>
-          <StatusBadge status={isBuilding ? 'building' : project.status} />
+          {/* Animated wrapper — scales on build complete */}
+          <Animated.View style={statusAnimStyle}>
+            <StatusBadge status={isBuilding ? 'building' : project.status} />
+          </Animated.View>
         </View>
 
         <View style={styles.metaSection}>

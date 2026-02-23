@@ -100,6 +100,12 @@ export const useAuthStore = create<AuthStore>((set, get) => {
     },
 
     logout: async (): Promise<void> => {
+      // Stop all active builds before clearing session so setInterval callbacks
+      // don't fire against a logged-out state (logout mid-build edge case).
+      // Lazy import breaks the circular dep: authStore → projectsStore.
+      const { useProjectsStore } = await import('@/store/projectsStore');
+      useProjectsStore.getState().stopAllBuilds();
+
       set({ isLoading: true });
       try {
         await authProvider.signOut();

@@ -7,6 +7,7 @@ import Animated, {
   withSequence,
   withTiming,
   cancelAnimation,
+  FadeIn,
 } from 'react-native-reanimated';
 import { useTheme } from '@/hooks';
 
@@ -23,13 +24,15 @@ export function Skeleton({ width = '100%', height = 16, borderRadius }: Skeleton
   useEffect(() => {
     opacity.value = withRepeat(
       withSequence(
-        withTiming(0.4, { duration: 700 }),
-        withTiming(1, { duration: 700 }),
+        withTiming(0.35, { duration: 750 }),
+        withTiming(1, { duration: 750 }),
       ),
       -1,
       false,
     );
     return () => {
+      // Explicitly cancel on unmount so the worklet doesn't write to a
+      // garbage-collected shared value (Reanimated cleanup).
       cancelAnimation(opacity);
     };
   }, [opacity]);
@@ -77,7 +80,9 @@ export function SkeletonCard({ lines = 2 }: SkeletonRowProps): React.JSX.Element
   });
 
   return (
-    <View style={styles.card}>
+    // FadeIn gives the skeleton a smooth entrance instead of a hard pop-in,
+    // which makes the transition from loading → content feel polished.
+    <Animated.View entering={FadeIn.duration(300)} style={styles.card}>
       <View style={styles.titleRow}>
         <Skeleton width="60%" height={18} />
       </View>
@@ -89,6 +94,6 @@ export function SkeletonCard({ lines = 2 }: SkeletonRowProps): React.JSX.Element
       <View style={styles.badgeRow}>
         <Skeleton width={72} height={22} borderRadius={theme.radii.full} />
       </View>
-    </View>
+    </Animated.View>
   );
 }

@@ -46,3 +46,5 @@ export function safeParseJson<T>(json: string): T | null {
     return null;
   }
 }
+
+export * from './haptics';

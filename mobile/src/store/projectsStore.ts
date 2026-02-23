@@ -3,6 +3,15 @@ import { mockProjectService } from '@/mock/mockProjectService';
 import { mockBuildService } from '@/mock/mockBuildService';
 import type { MockProject, BuildLogEntry, ProjectStatus } from '@/mock/mockData';
 
+// ─── Constants ────────────────────────────────────────────────────────────────
+
+/**
+ * Hard cap on log entries per project kept in memory.
+ * When exceeded the oldest entries are dropped to prevent unbounded growth
+ * during long / repeated builds (stress test: 10 simultaneous builds).
+ */
+const MAX_LOG_ENTRIES = 500;
+
 // ─── Store shape ──────────────────────────────────────────────────────────────
 
 interface ProjectsStore {
@@ -17,9 +26,19 @@ interface ProjectsStore {
   // Actions
   fetchProjects: () => Promise<void>;
   createProject: (payload: { name: string; description: string }) => Promise<MockProject>;
+  /**
+   * deleteProject — guards against deleting a project that is currently
+   * building. Callers should check `activeBuilds[id]` first and either stop
+   * the build or block the action.
+   */
   deleteProject: (id: string) => Promise<void>;
   startBuild: (projectId: string) => void;
   stopBuild: (projectId: string) => void;
+  /**
+   * stopAllBuilds — stops every active build and resets all activeBuilds to
+   * false. Called on logout and on AppState change to background.
+   */
+  stopAllBuilds: () => void;
   clearLogs: (projectId: string) => void;
   clearError: () => void;
 
@@ -69,8 +88,20 @@ export const useProjectsStore = create<ProjectsStore>((set, get) => ({
   },
 
   deleteProject: async (id: string): Promise<void> => {
-    // Optimistic remove
-    set((state) => ({ projects: state.projects.filter((p) => p.id !== id) }));
+    const state = get();
+
+    // Guard: stop the build first if the project is currently building so the
+    // setInterval doesn't fire callbacks for a project that no longer exists.
+    if (state.activeBuilds[id]) {
+      mockBuildService.stopBuild(id);
+      set((s) => ({
+        activeBuilds: { ...s.activeBuilds, [id]: false },
+      }));
+    }
+
+    // Optimistic remove from UI immediately
+    set((s) => ({ projects: s.projects.filter((p) => p.id !== id) }));
+
     try {
       await mockProjectService.delete(id);
     } catch {
@@ -80,10 +111,12 @@ export const useProjectsStore = create<ProjectsStore>((set, get) => ({
   },
 
   startBuild: (projectId: string): void => {
+    // Idempotency guard — the store already tracks this; the service also
+    // stops any existing session before starting. Both layers agree.
     const alreadyBuilding = get().activeBuilds[projectId];
     if (alreadyBuilding) return;
 
-    // Mark active + clear previous logs for this project
+    // Mark active + reset logs for this project
     set((state) => ({
       activeBuilds: { ...state.activeBuilds, [projectId]: true },
       buildLogs: { ...state.buildLogs, [projectId]: [] },
@@ -99,19 +132,26 @@ export const useProjectsStore = create<ProjectsStore>((set, get) => ({
     mockBuildService.startBuild(
       projectId,
       (entry: BuildLogEntry) => {
-        set((state) => ({
-          buildLogs: {
-            ...state.buildLogs,
-            [projectId]: [...(state.buildLogs[projectId] ?? []), entry],
-          },
-        }));
+        set((state) => {
+          const current = state.buildLogs[projectId] ?? [];
+          // Enforce memory cap: drop oldest when limit is hit
+          const next =
+            current.length >= MAX_LOG_ENTRIES
+              ? [...current.slice(current.length - MAX_LOG_ENTRIES + 1), entry]
+              : [...current, entry];
+          return {
+            buildLogs: { ...state.buildLogs, [projectId]: next },
+          };
+        });
       },
       (success: boolean) => {
         const finalStatus: ProjectStatus = success ? 'success' : 'failed';
         set((state) => ({
           activeBuilds: { ...state.activeBuilds, [projectId]: false },
           projects: state.projects.map((p) =>
-            p.id === projectId ? { ...p, status: finalStatus, updatedAt: new Date().toISOString() } : p,
+            p.id === projectId
+              ? { ...p, status: finalStatus, updatedAt: new Date().toISOString() }
+              : p,
           ),
         }));
       },
@@ -126,6 +166,30 @@ export const useProjectsStore = create<ProjectsStore>((set, get) => ({
         p.id === projectId ? { ...p, status: 'idle' as ProjectStatus } : p,
       ),
     }));
+  },
+
+  stopAllBuilds: (): void => {
+    const { activeBuilds, projects } = get();
+
+    // Stop every active build session
+    Object.entries(activeBuilds).forEach(([projectId, active]) => {
+      if (active) {
+        mockBuildService.stopBuild(projectId);
+      }
+    });
+
+    // Reset all active build flags and reset building projects to idle
+    const resetActiveBuilds: Record<string, boolean> = {};
+    Object.keys(activeBuilds).forEach((id) => {
+      resetActiveBuilds[id] = false;
+    });
+
+    set({
+      activeBuilds: resetActiveBuilds,
+      projects: projects.map((p) =>
+        p.status === 'building' ? { ...p, status: 'idle' as ProjectStatus } : p,
+      ),
+    });
   },
 
   clearLogs: (projectId: string): void => {

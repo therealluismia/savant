@@ -8,6 +8,7 @@ import {
   Pressable,
 } from 'react-native';
 import { useTheme } from '@/hooks';
+import { hapticHeavy, hapticLight } from '@/utils/haptics';
 
 interface ConfirmModalProps {
   visible: boolean;
@@ -100,10 +101,10 @@ export function ConfirmModal({
             <Text style={styles.title}>{title}</Text>
             <Text style={styles.message}>{message}</Text>
             <View style={styles.buttonRow}>
-              <TouchableOpacity style={styles.cancelBtn} onPress={onCancel} activeOpacity={0.8}>
+              <TouchableOpacity style={styles.cancelBtn} onPress={() => { hapticLight(); onCancel(); }} activeOpacity={0.8}>
                 <Text style={styles.cancelText}>{cancelLabel}</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.confirmBtn} onPress={onConfirm} activeOpacity={0.8}>
+              <TouchableOpacity style={styles.confirmBtn} onPress={() => { if (destructive) hapticHeavy(); onConfirm(); }} activeOpacity={0.8}>
                 <Text style={styles.confirmText}>{confirmLabel}</Text>
               </TouchableOpacity>
             </View>

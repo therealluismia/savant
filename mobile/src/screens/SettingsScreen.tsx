@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { useTheme } from '@/hooks';
 import { useThemeStore } from '@/store';
+import { hapticSelection, hapticLight } from '@/utils/haptics';
 import type { ThemeMode } from '@/types';
 
 interface ThemeOptionProps {
@@ -59,7 +60,7 @@ function ThemeOption({ label, description, value: _value, selected, onSelect }: 
   });
 
   return (
-    <TouchableOpacity style={styles.row} onPress={onSelect} activeOpacity={0.7}>
+    <TouchableOpacity style={styles.row} onPress={() => { hapticSelection(); onSelect(); }} activeOpacity={0.7}>
       <View style={styles.info}>
         <Text style={styles.label}>{label}</Text>
         <Text style={styles.description}>{description}</Text>
@@ -110,7 +111,7 @@ function SettingRow({ label, description, value, onToggle }: SettingRowProps): R
       </View>
       <Switch
         value={value}
-        onValueChange={onToggle}
+        onValueChange={(val) => { hapticLight(); onToggle(val); }}
         trackColor={{ false: theme.colors.border, true: theme.colors.primary }}
         thumbColor={theme.colors.surface}
       />

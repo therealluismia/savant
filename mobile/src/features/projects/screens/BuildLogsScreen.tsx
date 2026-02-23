@@ -5,7 +5,7 @@ import {
   FlatList,
   TouchableOpacity,
   StyleSheet,
-  ListRenderItem,
+  type ListRenderItem,
 } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useRoute } from '@react-navigation/native';
@@ -14,6 +14,7 @@ import { useTheme } from '@/hooks';
 import { useBuild } from '../hooks/useBuild';
 import { useProjectsStore } from '@/store';
 import { EmptyState } from '@/components';
+import { hapticMedium, hapticSuccess, hapticError, hapticWarning } from '@/utils/haptics';
 import type { AppStackParamList } from '@/types';
 import type { BuildLogEntry, BuildLogLevel } from '../types';
 
@@ -21,6 +22,9 @@ import type { BuildLogEntry, BuildLogLevel } from '../types';
 const TERMINAL_BG = '#020617';
 const TERMINAL_BORDER = '#1E293B';
 const TERMINAL_TIMESTAMP = '#475569';
+
+// Fixed row height for getItemLayout (timestamp fontSize 11 × lineHeight 1.5 ≈ 17 + mb 4)
+const LOG_ROW_HEIGHT = 21;
 
 type Props = NativeStackScreenProps<AppStackParamList, 'BuildLogs'>;
 
@@ -47,16 +51,36 @@ export default function BuildLogsScreen(): React.JSX.Element {
   const { isBuilding, logs, start, stop } = useBuild(projectId);
   const project = useProjectsStore((s) => s.getProjectById(projectId));
 
+  // Track previous isBuilding to detect build completion
+  const prevIsBuilding = useRef(false);
+
   useEffect(() => {
     if (logs.length > 0) {
       flatListRef.current?.scrollToEnd({ animated: true });
     }
   }, [logs.length]);
 
+  // Haptics + scroll on build completion
+  useEffect(() => {
+    const justFinished = prevIsBuilding.current && !isBuilding && logs.length > 0;
+    if (justFinished && project) {
+      if (project.status === 'success') {
+        hapticSuccess();
+      } else if (project.status === 'failed') {
+        hapticError();
+      }
+      // Scroll to the final log line
+      setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 100);
+    }
+    prevIsBuilding.current = isBuilding;
+  }, [isBuilding, project, logs.length]);
+
   const handleToggleBuild = useCallback((): void => {
     if (isBuilding) {
+      hapticWarning();
       stop();
     } else {
+      hapticMedium();
       start();
     }
   }, [isBuilding, start, stop]);
@@ -65,6 +89,8 @@ export default function BuildLogsScreen(): React.JSX.Element {
     ({ item, index }) => <LogLine entry={item} index={index} theme={theme} />,
     [theme],
   );
+
+  const keyExtractor = useCallback((item: BuildLogEntry) => item.id, []);
 
   const styles = StyleSheet.create({
     container: {
@@ -84,6 +110,7 @@ export default function BuildLogsScreen(): React.JSX.Element {
       fontSize: theme.typography.fontSize.sm,
       fontWeight: theme.typography.fontWeight.medium,
       color: '#94A3B8',
+      flex: 1,
     },
     statusDot: {
       width: 8,
@@ -95,6 +122,10 @@ export default function BuildLogsScreen(): React.JSX.Element {
       flexDirection: 'row',
       alignItems: 'center',
       gap: theme.spacing[3],
+    },
+    logCount: {
+      fontSize: theme.typography.fontSize.xs,
+      color: TERMINAL_TIMESTAMP,
     },
     buildToggleBtn: {
       height: 32,
@@ -142,7 +173,10 @@ export default function BuildLogsScreen(): React.JSX.Element {
           action={
             <TouchableOpacity
               style={styles.startBuildBtn}
-              onPress={start}
+              onPress={() => {
+                hapticMedium();
+                start();
+              }}
               activeOpacity={0.85}
             >
               <Text style={styles.startBuildText}>Start Build</Text>
@@ -156,8 +190,12 @@ export default function BuildLogsScreen(): React.JSX.Element {
   return (
     <View style={styles.container}>
       <View style={styles.toolbar}>
-        <Text style={styles.projectLabel}>{project?.name ?? projectId}</Text>
+        <Text style={styles.projectLabel} numberOfLines={1}>
+          {project?.name ?? projectId}
+        </Text>
         <View style={styles.toolbarRight}>
+          {/* Log count — helps user see memory cap in action */}
+          <Text style={styles.logCount}>{logs.length} lines</Text>
           <View style={styles.statusDot} />
           <TouchableOpacity
             style={styles.buildToggleBtn}
@@ -174,11 +212,22 @@ export default function BuildLogsScreen(): React.JSX.Element {
       <FlatList
         ref={flatListRef}
         data={logs}
-        keyExtractor={(item) => item.id}
+        keyExtractor={keyExtractor}
         renderItem={renderItem}
         contentContainerStyle={styles.logList}
         showsVerticalScrollIndicator={false}
         onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
+        // ── Performance ────────────────────────────────────────────────────
+        getItemLayout={(_data, index) => ({
+          length: LOG_ROW_HEIGHT,
+          offset: LOG_ROW_HEIGHT * index,
+          index,
+        })}
+        maxToRenderPerBatch={20}
+        windowSize={15}
+        initialNumToRender={30}
+        // Logs only grow at the end — no need for removeClippedSubviews
+        // (it can cause flicker in bottom-anchored lists)
       />
     </View>
   );
@@ -192,14 +241,22 @@ interface LogLineProps {
   theme: ReturnType<typeof useTheme>;
 }
 
+// Only animate the first 3 lines and newly-arriving lines (index ≥ total-3).
+// This avoids running 500 entering animations simultaneously when the user
+// scrolls to the top, which would cause jank.
+const ANIMATE_THRESHOLD = 3;
+
 function LogLine({ entry, index, theme }: LogLineProps): React.JSX.Element {
   const color = LOG_COLOR[entry.level];
   const prefix = LOG_PREFIX[entry.level];
 
+  const shouldAnimate = index < ANIMATE_THRESHOLD;
+
   const styles = StyleSheet.create({
     row: {
       flexDirection: 'row',
-      marginBottom: theme.spacing[0.5],
+      marginBottom: 4,
+      minHeight: LOG_ROW_HEIGHT - 4,
     },
     timestamp: {
       fontSize: 11,
@@ -225,13 +282,23 @@ function LogLine({ entry, index, theme }: LogLineProps): React.JSX.Element {
     return `${hh}:${mm}:${ss}`;
   }
 
+  if (shouldAnimate) {
+    return (
+      <Animated.View
+        entering={FadeInDown.duration(180)}
+        style={styles.row}
+      >
+        <Text style={styles.timestamp}>{formatTime(entry.timestamp)}</Text>
+        <Text style={styles.message}>{prefix}{entry.message}</Text>
+      </Animated.View>
+    );
+  }
+
+  // Non-animated path: plain View, zero JS-thread animation overhead.
   return (
-    <Animated.View
-      entering={FadeInDown.duration(200).delay(index < 5 ? 0 : 50)}
-      style={styles.row}
-    >
+    <View style={styles.row}>
       <Text style={styles.timestamp}>{formatTime(entry.timestamp)}</Text>
       <Text style={styles.message}>{prefix}{entry.message}</Text>
-    </Animated.View>
+    </View>
   );
 }
