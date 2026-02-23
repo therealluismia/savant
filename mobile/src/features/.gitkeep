@@ -1,0 +1,4 @@
+// Feature modules are organized here.
+// Each feature should be a self-contained folder with its own
+// components, hooks, and types.
+// Example: /features/projects, /features/ai-builder
