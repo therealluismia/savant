@@ -1,6 +1,6 @@
 import type { AuthProvider } from '@/core/auth/AuthProvider';
 import { AuthProviderError, type AuthSession } from '@/core/auth/AuthSession';
-import { findMockUser } from './mockData';
+import { findMockUser, createMockUser } from './mockData';
 import { simulateLatency } from './latencySimulator';
 
 /**
@@ -64,5 +64,22 @@ export class MockAuthProvider implements AuthProvider {
   async getSession(): Promise<AuthSession | null> {
     await simulateLatency(null, 200);
     return currentSession;
+  }
+
+  async register(email: string, password: string, displayName: string): Promise<AuthSession> {
+    await simulateLatency(null, 700);
+
+    const existing = findMockUser(email);
+    if (existing) {
+      throw new AuthProviderError(
+        `An account already exists for "${email}". Try signing in instead.`,
+        'EMAIL_TAKEN',
+      );
+    }
+
+    const record = createMockUser(email, password, displayName);
+    const session = buildSession(record.id, record.email);
+    currentSession = session;
+    return session;
   }
 }

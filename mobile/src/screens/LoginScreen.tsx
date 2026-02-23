@@ -12,7 +12,12 @@ import {
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTheme, useAuth, useToast } from '@/hooks';
+import type { AuthStackParamList } from '@/types';
+
+type Nav = NativeStackNavigationProp<AuthStackParamList>;
 
 const loginSchema = z.object({
   email: z.string().email('Enter a valid email address'),
@@ -23,6 +28,7 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 
 export default function LoginScreen(): React.JSX.Element {
   const theme = useTheme();
+  const navigation = useNavigation<Nav>();
   const { login, isLoading } = useAuth();
   const { showError } = useToast();
   const [secureEntry, setSecureEntry] = useState(true);
@@ -144,6 +150,31 @@ export default function LoginScreen(): React.JSX.Element {
       fontSize: theme.typography.fontSize.md,
       fontWeight: theme.typography.fontWeight.semiBold,
     },
+    forgotBtn: {
+      alignSelf: 'flex-end',
+      marginBottom: theme.spacing[4],
+      marginTop: -theme.spacing[2],
+    },
+    forgotText: {
+      fontSize: theme.typography.fontSize.sm,
+      color: theme.colors.primary,
+      fontWeight: theme.typography.fontWeight.medium,
+    },
+    footer: {
+      marginTop: theme.spacing[6],
+      flexDirection: 'row',
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    footerText: {
+      fontSize: theme.typography.fontSize.sm,
+      color: theme.colors.text.secondary,
+    },
+    footerLink: {
+      fontSize: theme.typography.fontSize.sm,
+      color: theme.colors.primary,
+      fontWeight: theme.typography.fontWeight.semiBold,
+    },
   });
 
   return (
@@ -224,6 +255,14 @@ export default function LoginScreen(): React.JSX.Element {
             </View>
 
             <TouchableOpacity
+              style={styles.forgotBtn}
+              onPress={() => navigation.navigate('ForgotPassword')}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.forgotText}>Forgot password?</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
               style={[styles.submitButton, isLoading ? styles.submitButtonDisabled : null]}
               onPress={handleSubmit(onSubmit)}
               disabled={isLoading}
@@ -232,6 +271,13 @@ export default function LoginScreen(): React.JSX.Element {
               <Text style={styles.submitButtonText}>
                 {isLoading ? 'Signing in...' : 'Sign In'}
               </Text>
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.footer}>
+            <Text style={styles.footerText}>Don&apos;t have an account? </Text>
+            <TouchableOpacity onPress={() => navigation.navigate('Register')} activeOpacity={0.7}>
+              <Text style={styles.footerLink}>Create one</Text>
             </TouchableOpacity>
           </View>
         </ScrollView>

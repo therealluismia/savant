@@ -26,6 +26,13 @@ export interface AuthProvider {
   refreshSession(refreshToken: string): Promise<AuthSession>;
 
   /**
+   * Register a new account with email + password.
+   * Must return a fully-populated AuthSession (auto-sign-in after registration)
+   * or throw AuthProviderError (e.g. email already taken).
+   */
+  register(email: string, password: string, displayName: string): Promise<AuthSession>;
+
+  /**
    * Return the current active session from the provider's storage,
    * or null if no session exists.
    * Must never throw — callers rely on the null return to redirect to login.

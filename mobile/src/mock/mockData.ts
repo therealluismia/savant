@@ -60,6 +60,17 @@ export function findMockUser(email: string): MockUserRecord | undefined {
   return MOCK_USERS.find((u) => u.email.toLowerCase() === email.toLowerCase());
 }
 
+export function createMockUser(email: string, password: string, displayName: string): MockUserRecord {
+  const newUser: MockUserRecord = {
+    id: `usr_${Date.now()}`,
+    email,
+    password,
+    displayName,
+  };
+  MOCK_USERS.push(newUser);
+  return newUser;
+}
+
 export function toAuthUser(record: MockUserRecord): AuthUser {
   return { id: record.id, email: record.email };
 }

@@ -59,6 +59,7 @@ interface AuthStore {
   isLoading: boolean;
   isInitialized: boolean;
   login: (email: string, password: string) => Promise<void>;
+  register: (email: string, password: string, displayName: string) => Promise<void>;
   logout: () => Promise<void>;
   restoreSession: () => Promise<void>;
 }
@@ -80,6 +81,17 @@ export const useAuthStore = create<AuthStore>((set, get) => {
       set({ isLoading: true });
       try {
         const session = await authProvider.signIn(email, password);
+        await persistSession(session);
+        set({ session, isAuthenticated: true });
+      } finally {
+        set({ isLoading: false });
+      }
+    },
+
+    register: async (email: string, password: string, displayName: string): Promise<void> => {
+      set({ isLoading: true });
+      try {
+        const session = await authProvider.register(email, password, displayName);
         await persistSession(session);
         set({ session, isAuthenticated: true });
       } finally {

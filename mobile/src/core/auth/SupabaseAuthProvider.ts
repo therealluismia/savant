@@ -114,4 +114,20 @@ export class SupabaseAuthProvider implements AuthProvider {
       return null;
     }
   }
+
+  async register(email: string, password: string, _displayName: string): Promise<AuthSession> {
+    const { data, error } = await this.client.auth.signUp({ email, password });
+
+    if (error) {
+      throw new AuthProviderError(error.message, error.code ?? 'SIGN_UP_ERROR');
+    }
+    if (!data.session) {
+      throw new AuthProviderError(
+        'Registration succeeded but no session was returned. Email confirmation may be required.',
+        'NO_SESSION_AFTER_SIGNUP',
+      );
+    }
+
+    return mapSession(data.session);
+  }
 }

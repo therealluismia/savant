@@ -1,6 +1,8 @@
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import HomeScreen from '@/screens/HomeScreen';
+import ProfileScreen from '@/screens/ProfileScreen';
+import SettingsScreen from '@/screens/SettingsScreen';
 import {
   ProjectsListScreen,
   CreateProjectScreen,
@@ -62,6 +64,16 @@ export function AppStack(): React.JSX.Element {
           },
           contentStyle: { backgroundColor: '#020617' },
         }}
+      />
+      <Stack.Screen
+        name="Profile"
+        component={ProfileScreen}
+        options={{ title: 'Profile' }}
+      />
+      <Stack.Screen
+        name="Settings"
+        component={SettingsScreen}
+        options={{ title: 'Settings' }}
       />
     </Stack.Navigator>
   );

@@ -4,13 +4,13 @@
     "slug": "forgeai-builder",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
+    "scheme": "forgeai",
+    "assetBundlePatterns": ["**/*"],
     "splash": {
       "resizeMode": "contain",
       "backgroundColor": "#0F172A"
     },
-    "assetBundlePatterns": ["**/*"],
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.forgeai.builder"
@@ -22,15 +22,13 @@
       "package": "com.forgeai.builder"
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "bundler": "metro"
     },
-    "plugins": ["expo-router"],
     "extra": {
       "apiBaseUrl": "https://api.forgeai.dev",
       "appEnv": "development",
       "supabaseUrl": "https://placeholder.supabase.co",
       "supabaseAnonKey": "placeholder-anon-key"
-    },
-    "scheme": "forgeai"
+    }
   }
 }

@@ -113,7 +113,7 @@ function ActivityRow({ project, onPress }: ActivityRowProps): React.JSX.Element 
 export default function HomeScreen(): React.JSX.Element {
   const theme = useTheme();
   const navigation = useNavigation<Nav>();
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
 
   const projects = useProjectsStore((s) => s.projects);
   const fetchProjects = useProjectsStore((s) => s.fetchProjects);
@@ -168,9 +168,6 @@ export default function HomeScreen(): React.JSX.Element {
       borderColor: theme.colors.border,
       marginBottom: theme.spacing[5],
     },
-    activityRowLast: {
-      borderBottomWidth: 0,
-    },
     ctaRow: {
       flexDirection: 'row',
       gap: theme.spacing[3],
@@ -202,20 +199,6 @@ export default function HomeScreen(): React.JSX.Element {
       color: theme.colors.text.primary,
       fontWeight: theme.typography.fontWeight.medium,
       fontSize: theme.typography.fontSize.base,
-    },
-    logoutBtn: {
-      height: 44,
-      borderRadius: theme.radii.md,
-      borderWidth: 1,
-      borderColor: theme.colors.error,
-      alignItems: 'center',
-      justifyContent: 'center',
-      marginTop: theme.spacing[2],
-    },
-    logoutText: {
-      color: theme.colors.error,
-      fontSize: theme.typography.fontSize.sm,
-      fontWeight: theme.typography.fontWeight.medium,
     },
     emptyActivity: {
       paddingVertical: theme.spacing[6],
@@ -278,6 +261,22 @@ export default function HomeScreen(): React.JSX.Element {
             <Text style={styles.secondaryBtnText}>View All</Text>
           </TouchableOpacity>
         </View>
+        <View style={styles.ctaRow}>
+          <TouchableOpacity
+            style={styles.secondaryBtn}
+            onPress={() => navigation.navigate('Profile', {})}
+            activeOpacity={0.85}
+          >
+            <Text style={styles.secondaryBtnText}>Profile</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.secondaryBtn}
+            onPress={() => navigation.navigate('Settings')}
+            activeOpacity={0.85}
+          >
+            <Text style={styles.secondaryBtnText}>Settings</Text>
+          </TouchableOpacity>
+        </View>
 
         <Text style={styles.sectionTitle}>Recent Activity</Text>
         <View style={styles.activityCard}>
@@ -295,10 +294,6 @@ export default function HomeScreen(): React.JSX.Element {
             ))
           )}
         </View>
-
-        <TouchableOpacity style={styles.logoutBtn} onPress={logout} activeOpacity={0.8}>
-          <Text style={styles.logoutText}>Sign Out</Text>
-        </TouchableOpacity>
       </ScrollView>
     </View>
   );
