@@ -12,6 +12,7 @@
     "format": "prettier --write \"src/**/*.{ts,tsx}\""
   },
   "dependencies": {
+    "@expo/metro-runtime": "~4.0.1",
     "@hookform/resolvers": "^5.0.1",
     "@react-native-async-storage/async-storage": "1.23.1",
     "@react-navigation/native": "^6.1.18",
@@ -20,7 +21,7 @@
     "axios": "^1.9.0",
     "expo": "~52.0.0",
     "expo-constants": "~17.0.0",
-    "expo-haptics": "^15.0.8",
+    "expo-haptics": "~14.0.1",
     "expo-status-bar": "~2.0.0",
     "react": "18.3.1",
     "react-hook-form": "^7.56.4",
